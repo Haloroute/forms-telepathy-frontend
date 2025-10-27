@@ -8,6 +8,24 @@ let currentTab = null; // Store current tab info
 let saveTabState = 'initial'; // Track save tab state: 'initial', 'extracted', 'uploaded'
 let uploadedKey = null; // Store uploaded key
 
+// Load extension info from manifest
+async function loadExtensionInfo() {
+    try {
+        const manifestData = chrome.runtime.getManifest();
+        
+        // Update extension info in About tab
+        document.getElementById('extensionName').textContent = manifestData.name;
+        document.getElementById('extensionVersion').textContent = `Version ${manifestData.version}`;
+        document.getElementById('extensionDescription').textContent = manifestData.description;
+        
+        console.log('Loaded extension info:', manifestData.name, manifestData.version);
+    } catch (error) {
+        console.error('Error loading extension info:', error);
+        document.getElementById('extensionVersion').textContent = 'Version Unknown';
+        document.getElementById('extensionDescription').textContent = 'Unable to load extension information.';
+    }
+}
+
 // Tab switching functionality
 function initializeTabs() {
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -249,6 +267,27 @@ function displayQuizzes(quizzes, currentTab) {
         const key = document.createElement('span');
         key.className = 'quiz-key';
         key.textContent = quiz.key;
+        key.style.cursor = 'pointer';
+        key.style.display = 'inline-block';
+        key.style.transition = 'transform 0.2s, box-shadow 0.2s';
+
+        // Add hover effect
+        key.addEventListener('mouseenter', () => {
+            key.style.transform = 'translateY(-2px)';
+            key.style.boxShadow = '0 4px 8px rgba(255, 140, 0, 0.3)';
+        });
+        key.addEventListener('mouseleave', () => {
+            key.style.transform = 'translateY(0)';
+            key.style.boxShadow = 'none';
+        });
+
+        key.addEventListener('click', () => {
+            copyToClipboard(quiz.key);
+            key.textContent = 'Copied!';
+            setTimeout(() => {
+                key.textContent = quiz.key;
+            }, 1000);
+        });
 
         // Action button
         const button = document.createElement('button');
@@ -730,6 +769,9 @@ async function loadNotifications() {
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
+    // Load extension info first
+    loadExtensionInfo();
+    
     // Initialize main tabs
     initializeTabs();
     

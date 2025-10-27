@@ -466,9 +466,105 @@
 }
 
 /* About Tab */
-#aboutPlaceholder {
-    text-align: center;
-    color: #666;
+#aboutContent {
     padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.about-header {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #4CAF50;
+}
+
+.about-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    color: #333;
+}
+
+.version-badge {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.about-section {
+    margin-bottom: 20px;
+}
+
+.about-section h3 {
+    font-size: 16px;
+    color: #4CAF50;
+    margin: 0 0 10px 0;
+    font-weight: bold;
+}
+
+.about-section p {
+    font-size: 13px;
+    color: #666;
     line-height: 1.6;
+    margin: 0;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.8;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+}
+
+.feature-list strong {
+    color: #333;
+}
+
+.credits-text {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.8;
+}
+
+.credits-text strong {
+    color: #333;
+}
+
+.credits-text a {
+    color: #4CAF50;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.credits-text a:hover {
+    text-decoration: underline;
+}
+
+.about-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.about-footer p {
+    font-size: 11px;
+    color: #999;
+    margin: 0;
 }
