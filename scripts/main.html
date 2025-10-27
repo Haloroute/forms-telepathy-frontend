@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HUST DRL Helper - Extension</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-button active" data-tab="forms">Forms</button>
+        <button class="tab-button" data-tab="notifications">Notifications</button>
+        <button class="tab-button" data-tab="about">About</button>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="tab-content active" id="forms-tab">
+        <!-- Sub-tab Navigation for Forms -->
+        <div class="subtab-navigation">
+            <button class="subtab-button active" data-subtab="load">Load</button>
+            <button class="subtab-button" data-subtab="save">Save</button>
+        </div>
+
+        <!-- Sub-tab Contents -->
+        <div class="subtab-content active" id="load-subtab">
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" placeholder="Search quizzes by name or description...">
+                    <button id="searchButton" class="search-btn">Search</button>
+                </div>
+                <div class="search-mode-toggle">
+                    <label>
+                        <input type="radio" name="searchMode" value="text" checked>
+                        <span>By Name/Description</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="searchMode" value="key">
+                        <span>By Key</span>
+                    </label>
+                </div>
+            </div>
+            
+            <p id="loadStatusLabel"></p>
+            <div id="quizListContainer"></div>
+        </div>
+
+        <div class="subtab-content" id="save-subtab">
+            <p id="saveStatusLabel"></p>
+            <button id="extractDataButton" style="display: none;">Extract Forms Data</button>
+            
+            <div id="formsDataContainer" style="display: none;">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="formsName">
+                </div>
+                
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="formsDescription" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Created At:</label>
+                    <input type="text" id="formsCreatedAt" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label>Expired At:</label>
+                    <input type="datetime-local" id="formsExpiredAt" required>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="formsVisible" checked>
+                        Visible to public
+                    </label>
+                </div>
+                
+                <button id="submitFormsButton" class="submit-button">Submit to Server</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="notifications-tab">
+        <div id="notificationsList"></div>
+    </div>
+
+    <div class="tab-content" id="about-tab">
+        <div id="aboutContent">
+            <div class="about-header">
+                <h2 id="extensionName">Forms Telepathy</h2>
+                <p id="extensionVersion" class="version-badge">Loading...</p>
+            </div>
+            
+            <div class="about-section">
+                <h3>Description</h3>
+                <p id="extensionDescription">Loading...</p>
+            </div>
+            
+            <div class="about-section">
+                <h3>Features</h3>
+                <ul class="feature-list">
+                    <li>📥 <strong>Load Answers:</strong> Search and load Microsoft Forms answers instantly</li>
+                    <li>💾 <strong>Save Forms:</strong> Extract and upload form data to share with others</li>
+                    <li>🔍 <strong>Smart Search:</strong> Find quizzes by name, description, or unique key</li>
+                    <li>🔔 <strong>Notifications:</strong> Stay updated with important announcements</li>
+                    <li>🔐 <strong>Secure:</strong> All data is encrypted and stored securely</li>
+                </ul>
+            </div>
+            
+            <div class="about-section">
+                <h3>Credits</h3>
+                <p class="credits-text">
+                    Developed with ❤️ for HUST students<br>
+                    <strong>Developer:</strong> HUST DRL Helper Team<br>
+                </p>
+            </div>
+            
+            <div class="about-footer">
+                <p>© 2025 Forms Telepathy. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+   
+    <script src="utils/event.js"></script>
+    <script src="utils/inject.js"></script>
+    <script src="utils/designer.js"></script>
+    <script src="utils/web.js"></script>
+    
+    <script src="main.js"></script>
+</body>
+</html>
