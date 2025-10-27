@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Forms Telepathy",
-  "description": "Load and share Microsoft Forms answers seamlessly. Extract form data, upload to server, and load answers with a single click. Perfect for students and educators.",
+  "description": "Load and share Microsoft Forms answers seamlessly. Extract form data, upload to server, and load answers with a single click.",
   "version": "1.0.0",
   "permissions": [
     "scripting",
