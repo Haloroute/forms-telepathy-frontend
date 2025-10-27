@@ -70,7 +70,7 @@
 /* Tab Content */
 .tab-content {
     display: none;
-    /* padding: 15px; */
+    padding-bottom: 15px;
     animation: fadeIn 0.3s;
 }
 
@@ -94,6 +94,115 @@
     to { opacity: 1; }
 }
 
+/* Save Sub-tab Styles */
+#saveStatusLabel {
+    text-align: center;
+    color: #999;
+    padding: 15px;
+    font-size: 13px;
+    margin: 0;
+}
+
+#extractDataButton {
+    width: 100%;
+    padding: 10px;
+    background-color: #FF8C00;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-bottom: 15px;
+}
+
+#extractDataButton:hover {
+    background-color: #FFA500;
+    font-weight: bold;
+}
+
+#formsDataContainer {
+    animation: fadeIn 0.3s;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="datetime-local"],
+.form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.form-group input[readonly],
+.form-group textarea[readonly] {
+    background-color: #f5f5f5;
+    color: #666;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    cursor: pointer;
+    margin: 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 10px;
+}
+
+.submit-button:hover {
+    background-color: #45a049;
+}
+
+.submit-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
 /* Notifications List */
 #notificationsList {
     display: flex;
@@ -106,6 +215,7 @@
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 12px;
+    margin: 10px 15px 0 15px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     min-height: 75px;
     display: flex;
@@ -153,82 +263,4 @@
     color: #666;
     padding: 20px;
     line-height: 1.6;
-}
-
-/* Existing styles */
-.cell {    
-    border: 1px solid #ccc;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-#checkUrlLabel {
-    margin-top: 0px;
-    font-size: 20px;
-    font-weight: bold;
-    background-color: #f9f9f9;
-    color: #666;
-    padding: 5px 10px;
-    text-align: center;
-    line-height: 1.5;
-}
-
-.quizLabel {
-    margin-top: 10px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-}
-
-.infoLabel {    
-    margin-top: 10px;
-    font-size: 12px;
-    padding-left: 4px;
-    color: #333;
-}
-
-button {
-    padding: 8px 16px;
-    font-size: 14px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.quizButton {
-    margin: 5px 0;
-    color: #fff;
-    width: 100%;
-}
-
-#infoButton {
-    float: right;
-    margin: 5px 0 20px 0;
-}
-
-.goodEventButton {
-    background-color: #4CAF50;
-}
-
-.goodEventButton:hover {
-    background-color: #6fbf72;
-    font-weight: bold;
-}
-
-.badEventButton {
-    background-color: #FF5733;
-}
-
-.badEventButton:hover {
-    background-color: #FF8566;
-    font-weight: bold;
-}
-
-.disabledButton {
-    background-color: #AAAAAA;
-    color: #999999;
-    cursor: not-allowed;
 }

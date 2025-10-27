@@ -30,7 +30,39 @@
         </div>
 
         <div class="subtab-content" id="save-subtab">
-            <p>Save functionality will be implemented here.</p>
+            <p id="saveStatusLabel"></p>
+            <button id="extractDataButton" style="display: none;">Extract Forms Data</button>
+            
+            <div id="formsDataContainer" style="display: none;">
+                <div class="form-group">
+                    <label>Name:</label>
+                    <input type="text" id="formsName" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="formsDescription" readonly rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Created At:</label>
+                    <input type="text" id="formsCreatedAt" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label>Expired At:</label>
+                    <input type="datetime-local" id="formsExpiredAt" required>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="formsVisible" checked>
+                        Visible to public
+                    </label>
+                </div>
+                
+                <button id="submitFormsButton" class="submit-button">Submit to Server</button>
+            </div>
         </div>
     </div>
 

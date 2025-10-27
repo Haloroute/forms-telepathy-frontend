@@ -1,21 +1,8 @@
-﻿const backendUrl = "https://forms-telepathy.fly.dev";
+﻿const backendUrl = "https://forms-telepathy.fly.dev/api";
 const startUrl = "https://forms.office.com/pages/responsepage.aspx?id=";
 
-const manifestData = chrome.runtime.getManifest();
-const defaultLocale = manifestData.default_locale;
-const currentLocale = manifestData.current_locale;
-
-const cellContainer = document.getElementById('cellContainer');
-const noticeContainer = document.getElementById('noticeContainer');
-const infoButton = document.getElementById('infoButton');
-
-const loadingLabel = chrome.i18n.getMessage('loadingLabel');
-const formsOpenedLabel = chrome.i18n.getMessage('formsOpenedLabel');
-const formsNotOpenedLabel = chrome.i18n.getMessage('formsNotOpenedLabel');
-const noInternetLabel = chrome.i18n.getMessage('noInternetLabel');
-const versionInfo = chrome.i18n.getMessage('versionInfo', manifestData.version);
-const infoButtonContent = chrome.i18n.getMessage('infoButton');
-
+// Global variable to store extracted forms content
+let extractedFormsContent = null;
 
 // Tab switching functionality
 function initializeTabs() {
@@ -62,13 +49,211 @@ function initializeSubTabs() {
             // Handle different sub-tabs
             if (targetSubtab === 'load') {
                 console.log('Load sub-tab activated');
-                // Load forms logic here
             } else if (targetSubtab === 'save') {
                 console.log('Save sub-tab activated');
-                // Save forms logic here
+                initializeSaveTab();
             }
         });
     });
+}
+
+// Initialize Save tab
+async function initializeSaveTab() {
+    const saveStatusLabel = document.getElementById('saveStatusLabel');
+    const extractDataButton = document.getElementById('extractDataButton');
+    const formsDataContainer = document.getElementById('formsDataContainer');
+    
+    try {
+        const currentTab = await getCurrentTab();
+        
+        if (!currentTab || !currentTab.url.match(/https:\/\/forms\.office\.com\/pages\/responsepage/i)) {
+            // Not a Microsoft Forms page
+            saveStatusLabel.textContent = 'This page is not a Microsoft Forms page. Please navigate to a Microsoft Forms to extract data.';
+            saveStatusLabel.style.color = '#999';
+            extractDataButton.style.display = 'none';
+            formsDataContainer.style.display = 'none';
+        } else {
+            // Is a Microsoft Forms page
+            saveStatusLabel.textContent = 'Microsoft Forms page detected. Click the button below to extract data.';
+            saveStatusLabel.style.color = '#4CAF50';
+            extractDataButton.style.display = 'block';
+            formsDataContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error initializing save tab:', error);
+        saveStatusLabel.textContent = 'Error detecting current page.';
+        saveStatusLabel.style.color = '#c62828';
+    }
+}
+
+// Extract forms data
+async function extractFormsData() {
+    const extractDataButton = document.getElementById('extractDataButton');
+    const saveStatusLabel = document.getElementById('saveStatusLabel');
+    
+    try {
+        extractDataButton.disabled = true;
+        extractDataButton.textContent = 'Extracting...';
+        
+        const currentTab = await getCurrentTab();
+        
+        if (!currentTab.url.match(/https:\/\/forms\.office\.com\/pages\/responsepage/i)) {
+            alert('This is not a Microsoft Forms page!');
+            return;
+        }
+        
+        const id = currentTab.url.slice(startUrl.length).split("&")[0];
+        const storageId = "officeforms.answermap." + id;
+        
+        chrome.scripting.executeScript({
+            target: { tabId: currentTab.id },
+            function: getFormsData,
+            args: [storageId]
+        }, result => {
+            if (result && result[0] && result[0].result !== null) {
+                const formsData = result[0].result;
+                formsData.url = currentTab.url;
+                
+                // Store content globally
+                extractedFormsContent = formsData.answers;
+                
+                // Display extracted data
+                displayFormsData(formsData);
+                
+                saveStatusLabel.textContent = 'Data extracted successfully!';
+                saveStatusLabel.style.color = '#4CAF50';
+            } else {
+                alert('No matching key found! Please check the form and try again!');
+                saveStatusLabel.textContent = 'Failed to extract data.';
+                saveStatusLabel.style.color = '#c62828';
+            }
+            
+            extractDataButton.disabled = false;
+            extractDataButton.textContent = 'Extract Forms Data';
+        });
+        
+    } catch (error) {
+        console.error('Error extracting forms data:', error);
+        alert('Error extracting forms data: ' + error.message);
+        extractDataButton.disabled = false;
+        extractDataButton.textContent = 'Extract Forms Data';
+    }
+}
+
+// Display extracted forms data
+function displayFormsData(formsData) {
+    const formsDataContainer = document.getElementById('formsDataContainer');
+    
+    // Populate form fields
+    document.getElementById('formsName').value = formsData.name || 'Untitled Form';
+    document.getElementById('formsDescription').value = formsData.description || 'No Description';
+    
+    // Format created at as current time
+    const now = new Date();
+    const createdAtFormatted = formatDateTime(now);
+    document.getElementById('formsCreatedAt').value = createdAtFormatted;
+    
+    // Set default expired at (7 days from now)
+    const expiredAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    document.getElementById('formsExpiredAt').value = formatDateTimeLocal(expiredAt);
+    
+    // Show the form container
+    formsDataContainer.style.display = 'block';
+}
+
+// Format date time for display (DD/MM/YYYY HH:mm:ss)
+function formatDateTime(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
+// Format date time for datetime-local input (YYYY-MM-DDTHH:mm)
+function formatDateTimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// Submit forms data to server
+async function submitFormsData() {
+    const submitButton = document.getElementById('submitFormsButton');
+    
+    try {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Submitting...';
+        
+        // Get form values
+        const name = document.getElementById('formsName').value;
+        const description = document.getElementById('formsDescription').value;
+        const expiredAtInput = document.getElementById('formsExpiredAt').value;
+        const visible = document.getElementById('formsVisible').checked;
+        
+        if (!expiredAtInput) {
+            alert('Please select an expiration date!');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit to Server';
+            return;
+        }
+        
+        if (!extractedFormsContent) {
+            alert('No forms content to upload!');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit to Server';
+            return;
+        }
+        
+        // Get current tab URL
+        const currentTab = await getCurrentTab();
+        const url = currentTab.url;
+        
+        // Convert datetime-local to ISO string
+        const expiredAt = new Date(expiredAtInput).toISOString();
+        
+        // Prepare quiz data
+        const quizData = prepareQuizData(
+            name,
+            description,
+            url,
+            extractedFormsContent,
+            expiredAt,
+            visible
+        );
+        
+        console.log('Uploading quiz data:', quizData);
+        
+        // Upload to backend
+        const response = await uploadQuiz(backendUrl, quizData);
+        
+        if (response && response.success) {
+            alert(`Quiz uploaded successfully!\nKey: ${response.data.key}\n\nShare this key with others to let them access your quiz.`);
+            
+            // Reset form
+            document.getElementById('formsDataContainer').style.display = 'none';
+            document.getElementById('extractDataButton').style.display = 'block';
+            document.getElementById('saveStatusLabel').textContent = 'Quiz uploaded! You can extract another form.';
+            extractedFormsContent = null;
+        } else {
+            const errorMsg = response && response.message ? response.message : 'Unknown error';
+            alert(`Failed to upload quiz: ${errorMsg}`);
+        }
+        
+    } catch (error) {
+        console.error('Error submitting forms data:', error);
+        alert('Error submitting forms data: ' + error.message);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit to Server';
+    }
 }
 
 // Load notifications from backend
@@ -79,9 +264,10 @@ async function loadNotifications() {
     notificationsList.innerHTML = '<div class="notification-loading">Loading notifications...</div>';
     
     try {
-        const notifications = await fetchData(`${backendUrl}/notifications?active=true`, 'json');
+        // Use getActiveNotifications from web.js
+        const response = await getActiveNotifications(backendUrl);
         
-        if (!notifications || !notifications.data || notifications.data.length === 0) {
+        if (!response || !response.success || !response.data || response.data.length === 0) {
             notificationsList.innerHTML = '<div class="notification-empty">No active notifications</div>';
             return;
         }
@@ -90,7 +276,7 @@ async function loadNotifications() {
         notificationsList.innerHTML = '';
         
         // Create notification cards
-        notifications.data.forEach(notification => {
+        response.data.forEach(notification => {
             const card = document.createElement('div');
             card.className = 'notification-card';
             
@@ -102,48 +288,12 @@ async function loadNotifications() {
             notificationsList.appendChild(card);
         });
         
-        console.log('Successfully loaded notifications:', notifications.data.length);
+        console.log('Successfully loaded notifications:', response.data.length);
     } catch (error) {
         console.error('Error loading notifications:', error);
         notificationsList.innerHTML = '<div class="notification-error">Failed to load notifications. Please check your internet connection.</div>';
     }
 }
-
-function splitNotice(noticeData) { return noticeData.split(/\r\n|\r|\n/); }
-
-function initialize(currentTab, answerJson, noticeJson) {    
-    let quizCount = answerJson.length;  
-    let noticeLocale = getCurrentLocale(Object.keys(noticeJson), defaultLocale, currentLocale);
-    
-    if (currentTab == null || !currentTab.url.match(/https\:\/\/forms\.office\.com\/Pages\/ResponsePage/i)) {
-        changeNotification(formsNotOpenedLabel, "#FF5733");
-        console.log("Microsoft Forms website hasn't been opened yet");
-    } else {
-        changeNotification(formsOpenedLabel, "#4CAF50");
-        console.log("Microsoft Forms website has already been opened");       
-    }
-
-    for (let q = 0; q < quizCount; ++q) {
-        console.log("Quiz: ", JSON.stringify(answerJson[q]));
-        
-        let eventJson = [];
-        if (currentTab != null && currentTab.url.toLowerCase().includes(answerJson[q].Url.toLowerCase())) {
-            eventJson.push({ id: 1, args: answerJson[q].AnswerType1 });
-            eventJson.push({ id: 2, args: answerJson[q].AnswerType2 });
-        } else eventJson.push({ id: 0, args: answerJson[q].Url });
-        
-        let quizLocale = getCurrentLocale(Object.keys(answerJson[q].Metadata), defaultLocale, currentLocale);
-
-        if (quizLocale != null) {
-            cellContainer.appendChild(createQuizCell(answerJson[q].Metadata[quizLocale].Name, 
-                answerJson[q].Metadata[quizLocale].Info, 'quiz' + q, eventJson));
-            console.log("Successfully initialized quiz: ", answerJson[q].Metadata[quizLocale].Name);
-        }
-    }
-}
-
-document.getElementById('checkUrlSpan').textContent = loadingLabel;     
-document.getElementById('infoButton').textContent = infoButtonContent;
 
 document.addEventListener('DOMContentLoaded', async function () {
     // Initialize main tabs
@@ -152,17 +302,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Initialize sub-tabs for Forms
     initializeSubTabs();
     
-    // let answerJson = await fetchData(answerUrl, 'json');
-    // let noticeJson = await fetchData(noticeUrl, 'json');
-
-    // if (answerJson == null) {
-    //     changeNotification(noInternetLabel, "#666");
-    //     alert('Error fetching data');
-    // }
-    // else {
-    //     let currentTab = await getCurrentTab();        
-    //     initialize(currentTab, answerJson, noticeJson);
-    // }
+    // Initialize save tab on load
+    initializeSaveTab();
+    
+    // Add event listener for extract button
+    document.getElementById('extractDataButton').addEventListener('click', extractFormsData);
+    
+    // Add event listener for submit button
+    document.getElementById('submitFormsButton').addEventListener('click', submitFormsData);
 });
-
-infoButton.addEventListener('click', function() { alert(versionInfo); });

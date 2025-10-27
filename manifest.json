@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Forms Telepathy",
   "description": "A Chrome extension for \"enhancing\" Microsoft Forms.",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "permissions": [
     "scripting",
     "activeTab"
