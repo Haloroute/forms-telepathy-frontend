@@ -5,6 +5,8 @@ const startUrl = "https://forms.office.com/pages/responsepage.aspx?id=";
 let extractedFormsContent = null;
 let allQuizzes = []; // Store all quizzes for filtering
 let currentTab = null; // Store current tab info
+let saveTabState = 'initial'; // Track save tab state: 'initial', 'extracted', 'uploaded'
+let uploadedKey = null; // Store uploaded key
 
 // Tab switching functionality
 function initializeTabs() {
@@ -95,7 +97,6 @@ async function performSearch() {
     const searchQuery = searchInput.value.trim();
     const searchMode = document.querySelector('input[name="searchMode"]:checked').value;
     const loadStatusLabel = document.getElementById('loadStatusLabel');
-    const quizListContainer = document.getElementById('quizListContainer');
     
     if (!searchQuery) {
         // If search is empty, reload all quizzes
@@ -104,21 +105,19 @@ async function performSearch() {
     }
     
     try {
-        loadStatusLabel.textContent = 'Searching...';
+        loadStatusLabel.innerHTML = '<div class="quiz-loading">Searching...</div>';
         loadStatusLabel.style.color = '#999';
-        quizListContainer.innerHTML = '<div class="quiz-loading">Searching...</div>';
         
         if (searchMode === 'key') {
             // Search by key
             const response = await getQuizByKey(backendUrl, searchQuery.toUpperCase());
             
             if (!response || !response.success || !response.data) {
-                loadStatusLabel.textContent = 'No quiz found with this key';
-                quizListContainer.innerHTML = '<div class="quiz-empty">No quiz found with this key</div>';
+                loadStatusLabel.innerHTML = '<div class="quiz-empty">No quiz found with this key</div>';
                 return;
             }
-            
-            loadStatusLabel.textContent = 'Found 1 quiz';
+
+            loadStatusLabel.innerHTML = '<div class="quiz-found">Found 1 quiz</div>';
             loadStatusLabel.style.color = '#4CAF50';
             
             // Display single quiz
@@ -134,13 +133,11 @@ async function performSearch() {
             });
             
             if (filteredQuizzes.length === 0) {
-                loadStatusLabel.textContent = 'No quizzes found';
-                quizListContainer.innerHTML = '<div class="quiz-empty">No quizzes match your search</div>';
+                loadStatusLabel.innerHTML = '<div class="quiz-empty">No quizzes match your search</div>';
                 return;
             }
-            
-            loadStatusLabel.textContent = `Found ${filteredQuizzes.length} quiz(es)`;
-            loadStatusLabel.style.color = '#4CAF50';
+
+            loadStatusLabel.innerHTML = `<div class="quiz-found">Found ${filteredQuizzes.length} quiz(es)</div>`;
             
             // Sort filtered quizzes - matching URL first
             const currentUrl = currentTab ? currentTab.url.toLowerCase() : '';
@@ -158,9 +155,8 @@ async function performSearch() {
         
     } catch (error) {
         console.error('Error searching quizzes:', error);
-        loadStatusLabel.textContent = 'Error searching quizzes';
+        loadStatusLabel.innerHTML = '<div class="quiz-error">Error searching quizzes</div>';
         loadStatusLabel.style.color = '#c62828';
-        quizListContainer.innerHTML = '<div class="quiz-error">Failed to search quizzes. Please try again.</div>';
     }
 }
 
@@ -174,9 +170,8 @@ async function initializeLoadTab() {
     searchInput.value = '';
 
     try {
-        loadStatusLabel.textContent = 'Loading quizzes...';
+        loadStatusLabel.innerHTML = '<div class="quiz-loading">Loading quizzes...</div>';
         loadStatusLabel.style.color = '#999';
-        quizListContainer.innerHTML = '<div class="quiz-loading">Loading quizzes...</div>';
 
         // Get current tab
         currentTab = await getCurrentTab();
@@ -186,13 +181,12 @@ async function initializeLoadTab() {
         const response = await getActiveQuizzes(backendUrl);
 
         if (!response || !response.success || !response.data || response.data.length === 0) {
-            loadStatusLabel.textContent = 'No quizzes available';
-            quizListContainer.innerHTML = '<div class="quiz-empty">No active quizzes found</div>';
+            loadStatusLabel.innerHTML = '<div class="quiz-empty">No active quizzes found</div>';
             allQuizzes = [];
             return;
         }
 
-        loadStatusLabel.textContent = `Found ${response.data.length} quiz(es)`;
+        loadStatusLabel.innerHTML = `<div class="quiz-found">Found ${response.data.length} quiz(es)</div>`;
         loadStatusLabel.style.color = '#4CAF50';
 
         // Store all quizzes globally
@@ -213,9 +207,8 @@ async function initializeLoadTab() {
 
     } catch (error) {
         console.error('Error loading quizzes:', error);
-        loadStatusLabel.textContent = 'Error loading quizzes';
+        loadStatusLabel.innerHTML = '<div class="quiz-error">Error loading quizzes</div>';
         loadStatusLabel.style.color = '#c62828';
-        quizListContainer.innerHTML = '<div class="quiz-error">Failed to load quizzes. Please check your internet connection.</div>';
         allQuizzes = [];
     }
 }
@@ -339,6 +332,28 @@ async function initializeSaveTab() {
     const extractDataButton = document.getElementById('extractDataButton');
     const formsDataContainer = document.getElementById('formsDataContainer');
     
+    // Check if already uploaded - restore uploaded state
+    if (saveTabState === 'uploaded' && uploadedKey) {
+        // Remove any existing key container to avoid duplicates
+        const existingKeyContainer = document.querySelector('.uploaded-key-container');
+        if (existingKeyContainer) {
+            existingKeyContainer.remove();
+        }
+        
+        displaySuccessKey(uploadedKey);
+        return;
+    }
+    
+    // Check if data already extracted - restore extracted state
+    if (saveTabState === 'extracted' && extractedFormsContent) {
+        saveStatusLabel.textContent = 'Data extracted successfully!';
+        saveStatusLabel.style.color = '#4CAF50';
+        extractDataButton.style.display = 'none';
+        formsDataContainer.style.display = 'block';
+        return;
+    }
+    
+    // Initial state - check current page
     try {
         const currentTab = await getCurrentTab();
         
@@ -393,11 +408,17 @@ async function extractFormsData() {
                 // Store content globally
                 extractedFormsContent = formsData.answers;
                 
+                // Update save tab state
+                saveTabState = 'extracted';
+                
                 // Display extracted data
                 displayFormsData(formsData);
                 
                 saveStatusLabel.textContent = 'Data extracted successfully!';
                 saveStatusLabel.style.color = '#4CAF50';
+                
+                // Hide extract button
+                extractDataButton.style.display = 'none';
             } else {
                 alert('No matching key found! Please check the form and try again!');
                 saveStatusLabel.textContent = 'Failed to extract data.';
@@ -420,7 +441,7 @@ async function extractFormsData() {
 function displayFormsData(formsData) {
     const formsDataContainer = document.getElementById('formsDataContainer');
     
-    // Populate form fields
+    // Populate form fields - name and description are now editable
     document.getElementById('formsName').value = formsData.name || 'Untitled Form';
     document.getElementById('formsDescription').value = formsData.description || 'No Description';
     
@@ -460,6 +481,90 @@ function formatDateTimeLocal(date) {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+// Copy text to clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        console.log('Copied to clipboard:', text);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+}
+
+// Display success key after upload
+function displaySuccessKey(key) {
+    const saveStatusLabel = document.getElementById('saveStatusLabel');
+    const extractDataButton = document.getElementById('extractDataButton');
+    const formsDataContainer = document.getElementById('formsDataContainer');
+    
+    // Hide form container
+    formsDataContainer.style.display = 'none';
+    
+    // Don't show extract button again
+    extractDataButton.style.display = 'none';
+    
+    // Remove existing key container if any
+    const existingKeyContainer = document.querySelector('.uploaded-key-container');
+    if (existingKeyContainer) {
+        existingKeyContainer.remove();
+    }
+    
+    // Create key display container
+    const keyContainer = document.createElement('div');
+    keyContainer.className = 'uploaded-key-container';
+    keyContainer.style.textAlign = 'center';
+    keyContainer.style.padding = '20px';
+    keyContainer.style.animation = 'fadeIn 0.3s';
+    
+    const keyLabel = document.createElement('span');
+    keyLabel.className = 'quiz-key';
+    keyLabel.textContent = key;
+    keyLabel.style.fontSize = '16px';
+    keyLabel.style.padding = '8px 16px';
+    keyLabel.style.cursor = 'pointer';
+    keyLabel.style.display = 'inline-block';
+    keyLabel.style.transition = 'transform 0.2s, box-shadow 0.2s';
+    
+    // Add hover effect
+    keyLabel.addEventListener('mouseenter', () => {
+        keyLabel.style.transform = 'translateY(-2px)';
+        keyLabel.style.boxShadow = '0 4px 8px rgba(255, 140, 0, 0.3)';
+    });
+    
+    keyLabel.addEventListener('mouseleave', () => {
+        keyLabel.style.transform = 'translateY(0)';
+        keyLabel.style.boxShadow = 'none';
+    });
+    
+    // Copy to clipboard on click
+    keyLabel.addEventListener('click', () => {
+        copyToClipboard(key);
+        saveStatusLabel.textContent = 'Key copied to clipboard!';
+        saveStatusLabel.style.color = '#4CAF50';
+        
+        // Reset message after 2 seconds
+        setTimeout(() => {
+            saveStatusLabel.textContent = 'Quiz uploaded successfully! Click the key to copy.';
+        }, 2000);
+    });
+    
+    const instructionText = document.createElement('div');
+    instructionText.textContent = 'Share this key with others';
+    instructionText.style.fontSize = '12px';
+    instructionText.style.color = '#666';
+    instructionText.style.marginTop = '10px';
+    
+    keyContainer.appendChild(keyLabel);
+    keyContainer.appendChild(instructionText);
+    
+    // Clear and update save subtab
+    const saveSubtab = document.getElementById('save-subtab');
+    saveSubtab.appendChild(keyContainer);
+    
+    // Update status label
+    saveStatusLabel.textContent = 'Quiz uploaded successfully! Click the key to copy.';
+    saveStatusLabel.style.color = '#4CAF50';
+}
+
 // Submit forms data to server
 async function submitFormsData() {
     const submitButton = document.getElementById('submitFormsButton');
@@ -468,11 +573,18 @@ async function submitFormsData() {
         submitButton.disabled = true;
         submitButton.textContent = 'Submitting...';
         
-        // Get form values
-        const name = document.getElementById('formsName').value;
-        const description = document.getElementById('formsDescription').value;
+        // Get form values (name and description can now be edited)
+        const name = document.getElementById('formsName').value.trim();
+        const description = document.getElementById('formsDescription').value.trim();
         const expiredAtInput = document.getElementById('formsExpiredAt').value;
         const visible = document.getElementById('formsVisible').checked;
+        
+        if (!name) {
+            alert('Please enter a quiz name!');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit to Server';
+            return;
+        }
         
         if (!expiredAtInput) {
             alert('Please select an expiration date!');
@@ -495,7 +607,7 @@ async function submitFormsData() {
         // Convert datetime-local to ISO string
         const expiredAt = new Date(expiredAtInput).toISOString();
         
-        // Prepare quiz data
+        // Prepare quiz data with updated name and description
         const quizData = prepareQuizData(
             name,
             description,
@@ -511,24 +623,58 @@ async function submitFormsData() {
         const response = await uploadQuiz(backendUrl, quizData);
         
         if (response && response.success) {
-            alert(`Quiz uploaded successfully!\nKey: ${response.data.key}\n\nShare this key with others to let them access your quiz.`);
+            // Store uploaded key
+            uploadedKey = response.data.key;
             
-            // Reset form
-            document.getElementById('formsDataContainer').style.display = 'none';
-            document.getElementById('extractDataButton').style.display = 'block';
-            document.getElementById('saveStatusLabel').textContent = 'Quiz uploaded! You can extract another form.';
+            // Update save tab state
+            saveTabState = 'uploaded';
+            
+            // Display success key instead of alert
+            displaySuccessKey(response.data.key);
+            
+            // Clear extracted content
             extractedFormsContent = null;
         } else {
             const errorMsg = response && response.message ? response.message : 'Unknown error';
             alert(`Failed to upload quiz: ${errorMsg}`);
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit to Server';
         }
         
     } catch (error) {
         console.error('Error submitting forms data:', error);
         alert('Error submitting forms data: ' + error.message);
-    } finally {
         submitButton.disabled = false;
         submitButton.textContent = 'Submit to Server';
+    }
+}
+
+// Format relative time (e.g., "2 hours ago", "Just now")
+function formatRelativeTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffSecs < 60) {
+        return 'JUST NOW';
+    } else if (diffMins < 60) {
+        return `${diffMins} MINUTE${diffMins > 1 ? 'S' : ''} AGO`;
+    } else if (diffHours < 24) {
+        return `${diffHours} HOUR${diffHours > 1 ? 'S' : ''} AGO`;
+    } else if (diffDays < 7) {
+        return `${diffDays} DAY${diffDays > 1 ? 'S' : ''} AGO`;
+    } else {
+        // Format as DD/MM/YYYY HH:MM
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
     }
 }
 
@@ -548,18 +694,30 @@ async function loadNotifications() {
             return;
         }
         
+        // Sort notifications by created_at (newest first)
+        const sortedNotifications = response.data.sort((a, b) => {
+            return new Date(b.created_at) - new Date(a.created_at);
+        });
+        
         // Clear loading message
         notificationsList.innerHTML = '';
         
         // Create notification cards
-        response.data.forEach(notification => {
+        sortedNotifications.forEach(notification => {
             const card = document.createElement('div');
             card.className = 'notification-card';
             
+            // Timestamp
+            const timestamp = document.createElement('div');
+            timestamp.className = 'notification-timestamp';
+            timestamp.textContent = formatRelativeTime(notification.created_at);
+            
+            // Content
             const content = document.createElement('div');
             content.className = 'notification-content';
             content.textContent = notification.content;
             
+            card.appendChild(timestamp);
             card.appendChild(content);
             notificationsList.appendChild(card);
         });

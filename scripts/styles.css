@@ -412,9 +412,6 @@
     padding: 12px;
     margin: 10px 15px 0 15px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    min-height: 75px;
-    display: flex;
-    align-items: center;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -423,11 +420,26 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+.notification-timestamp {
+    font-size: 10px;
+    font-weight: bold;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
 .notification-content {
     font-size: 13px;
     color: #333;
     line-height: 1.5;
     word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
 }
 
 .notification-loading {
@@ -443,6 +455,7 @@
     padding: 12px;
     border-radius: 8px;
     text-align: center;
+    margin: 10px 15px;
 }
 
 .notification-empty {
