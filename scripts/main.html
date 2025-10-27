@@ -24,9 +24,26 @@
 
         <!-- Sub-tab Contents -->
         <div class="subtab-content active" id="load-subtab">
-            <p id="checkUrlLabel"><span id="checkUrlSpan"></span></p>
-            <div id="cellContainer"></div>
-            <button id="infoButton"></button>
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <input type="text" id="searchInput" placeholder="Search quizzes by name or description...">
+                    <button id="searchButton" class="search-btn">Search</button>
+                </div>
+                <div class="search-mode-toggle">
+                    <label>
+                        <input type="radio" name="searchMode" value="text" checked>
+                        <span>By Name/Description</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="searchMode" value="key">
+                        <span>By Key</span>
+                    </label>
+                </div>
+            </div>
+            
+            <p id="loadStatusLabel"></p>
+            <div id="quizListContainer"></div>
         </div>
 
         <div class="subtab-content" id="save-subtab">

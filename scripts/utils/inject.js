@@ -12,7 +12,6 @@ function generateStorageKeyValuePair() {
     } catch (error) {
         console.log('Error generating key-value pairs: ', error);
     }
-    
 }
 
 function replaceValueType1(startId, newValue) {

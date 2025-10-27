@@ -3,6 +3,8 @@ const startUrl = "https://forms.office.com/pages/responsepage.aspx?id=";
 
 // Global variable to store extracted forms content
 let extractedFormsContent = null;
+let allQuizzes = []; // Store all quizzes for filtering
+let currentTab = null; // Store current tab info
 
 // Tab switching functionality
 function initializeTabs() {
@@ -49,12 +51,286 @@ function initializeSubTabs() {
             // Handle different sub-tabs
             if (targetSubtab === 'load') {
                 console.log('Load sub-tab activated');
+                initializeLoadTab();
             } else if (targetSubtab === 'save') {
                 console.log('Save sub-tab activated');
                 initializeSaveTab();
             }
         });
     });
+}
+
+// Initialize search functionality
+function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const searchModeRadios = document.querySelectorAll('input[name="searchMode"]');
+    
+    // Update placeholder based on search mode
+    searchModeRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'key') {
+                searchInput.placeholder = 'Enter quiz key...';
+            } else {
+                searchInput.placeholder = 'Search quizzes by name or description...';
+            }
+            searchInput.value = ''; // Clear search input when mode changes
+        });
+    });
+    
+    // Search on button click
+    searchButton.addEventListener('click', performSearch);
+    
+    // Search on Enter key
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+}
+
+// Perform search based on selected mode
+async function performSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const searchQuery = searchInput.value.trim();
+    const searchMode = document.querySelector('input[name="searchMode"]:checked').value;
+    const loadStatusLabel = document.getElementById('loadStatusLabel');
+    const quizListContainer = document.getElementById('quizListContainer');
+    
+    if (!searchQuery) {
+        // If search is empty, reload all quizzes
+        initializeLoadTab();
+        return;
+    }
+    
+    try {
+        loadStatusLabel.textContent = 'Searching...';
+        loadStatusLabel.style.color = '#999';
+        quizListContainer.innerHTML = '<div class="quiz-loading">Searching...</div>';
+        
+        if (searchMode === 'key') {
+            // Search by key
+            const response = await getQuizByKey(backendUrl, searchQuery.toUpperCase());
+            
+            if (!response || !response.success || !response.data) {
+                loadStatusLabel.textContent = 'No quiz found with this key';
+                quizListContainer.innerHTML = '<div class="quiz-empty">No quiz found with this key</div>';
+                return;
+            }
+            
+            loadStatusLabel.textContent = 'Found 1 quiz';
+            loadStatusLabel.style.color = '#4CAF50';
+            
+            // Display single quiz
+            displayQuizzes([response.data], currentTab);
+            
+        } else {
+            // Search by name/description (filter from all quizzes)
+            const searchLower = searchQuery.toLowerCase();
+            const filteredQuizzes = allQuizzes.filter(quiz => {
+                const nameMatch = quiz.name.toLowerCase().includes(searchLower);
+                const descMatch = quiz.description && quiz.description.toLowerCase().includes(searchLower);
+                return nameMatch || descMatch;
+            });
+            
+            if (filteredQuizzes.length === 0) {
+                loadStatusLabel.textContent = 'No quizzes found';
+                quizListContainer.innerHTML = '<div class="quiz-empty">No quizzes match your search</div>';
+                return;
+            }
+            
+            loadStatusLabel.textContent = `Found ${filteredQuizzes.length} quiz(es)`;
+            loadStatusLabel.style.color = '#4CAF50';
+            
+            // Sort filtered quizzes - matching URL first
+            const currentUrl = currentTab ? currentTab.url.toLowerCase() : '';
+            const sortedQuizzes = filteredQuizzes.sort((a, b) => {
+                const aMatches = currentUrl.includes(a.url.toLowerCase());
+                const bMatches = currentUrl.includes(b.url.toLowerCase());
+                
+                if (aMatches && !bMatches) return -1;
+                if (!aMatches && bMatches) return 1;
+                return 0;
+            });
+            
+            displayQuizzes(sortedQuizzes, currentTab);
+        }
+        
+    } catch (error) {
+        console.error('Error searching quizzes:', error);
+        loadStatusLabel.textContent = 'Error searching quizzes';
+        loadStatusLabel.style.color = '#c62828';
+        quizListContainer.innerHTML = '<div class="quiz-error">Failed to search quizzes. Please try again.</div>';
+    }
+}
+
+// Initialize Load tab
+async function initializeLoadTab() {
+    const loadStatusLabel = document.getElementById('loadStatusLabel');
+    const quizListContainer = document.getElementById('quizListContainer');
+    const searchInput = document.getElementById('searchInput');
+
+    // Clear search input
+    searchInput.value = '';
+
+    try {
+        loadStatusLabel.textContent = 'Loading quizzes...';
+        loadStatusLabel.style.color = '#999';
+        quizListContainer.innerHTML = '<div class="quiz-loading">Loading quizzes...</div>';
+
+        // Get current tab
+        currentTab = await getCurrentTab();
+        const currentUrl = currentTab ? currentTab.url : '';
+
+        // Fetch active quizzes from backend
+        const response = await getActiveQuizzes(backendUrl);
+
+        if (!response || !response.success || !response.data || response.data.length === 0) {
+            loadStatusLabel.textContent = 'No quizzes available';
+            quizListContainer.innerHTML = '<div class="quiz-empty">No active quizzes found</div>';
+            allQuizzes = [];
+            return;
+        }
+
+        loadStatusLabel.textContent = `Found ${response.data.length} quiz(es)`;
+        loadStatusLabel.style.color = '#4CAF50';
+
+        // Store all quizzes globally
+        allQuizzes = response.data;
+
+        // Sort quizzes - matching URL first
+        const quizzes = response.data.sort((a, b) => {
+            const aMatches = currentUrl.toLowerCase().includes(a.url.toLowerCase());
+            const bMatches = currentUrl.toLowerCase().includes(b.url.toLowerCase());
+
+            if (aMatches && !bMatches) return -1;
+            if (!aMatches && bMatches) return 1;
+            return 0;
+        });
+
+        // Display quizzes
+        displayQuizzes(quizzes, currentTab);
+
+    } catch (error) {
+        console.error('Error loading quizzes:', error);
+        loadStatusLabel.textContent = 'Error loading quizzes';
+        loadStatusLabel.style.color = '#c62828';
+        quizListContainer.innerHTML = '<div class="quiz-error">Failed to load quizzes. Please check your internet connection.</div>';
+        allQuizzes = [];
+    }
+}
+
+// Display quizzes list
+function displayQuizzes(quizzes, currentTab) {
+    const quizListContainer = document.getElementById('quizListContainer');
+    quizListContainer.innerHTML = '';
+
+    const currentUrl = currentTab ? currentTab.url.toLowerCase() : '';
+    const isFormsPage = currentTab && currentTab.url.match(/https:\/\/forms\.office\.com\/pages\/responsepage/i);
+
+    quizzes.forEach(quiz => {
+        const card = document.createElement('div');
+        card.className = 'quiz-card';
+
+        // Check if this quiz matches current page
+        const isCurrentPage = currentUrl.includes(quiz.url.toLowerCase());
+        if (isCurrentPage) {
+            card.classList.add('current-page');
+        }
+
+        // Quiz name
+        const name = document.createElement('div');
+        name.className = 'quiz-name';
+        name.textContent = quiz.name;
+
+        // Quiz description
+        const description = document.createElement('div');
+        description.className = 'quiz-description';
+        description.textContent = quiz.description || 'No description';
+
+        // Quiz footer (key + button)
+        const footer = document.createElement('div');
+        footer.className = 'quiz-footer';
+
+        // Quiz key
+        const key = document.createElement('span');
+        key.className = 'quiz-key';
+        key.textContent = quiz.key;
+
+        // Action button
+        const button = document.createElement('button');
+        button.className = 'quiz-action-button';
+
+        if (isCurrentPage && isFormsPage) {
+            // Green button - Load Answer
+            button.classList.add('load-answer');
+            button.textContent = 'Load Answer';
+            button.addEventListener('click', () => loadQuizAnswer(quiz, currentTab));
+        } else {
+            // Orange button - Open URL
+            button.classList.add('open-url');
+            button.textContent = 'Open Form';
+            button.addEventListener('click', () => openQuizUrl(quiz.url));
+        }
+
+        footer.appendChild(key);
+        footer.appendChild(button);
+
+        card.appendChild(name);
+        card.appendChild(description);
+        card.appendChild(footer);
+
+        quizListContainer.appendChild(card);
+    });
+}
+
+// Open quiz URL in new tab
+function openQuizUrl(url) {
+    chrome.tabs.create({ url: url });
+    console.log('Opening quiz URL:', url);
+}
+
+// Load quiz answer into current form
+async function loadQuizAnswer(quiz, currentTab) {
+    try {
+        console.log('Loading answer for quiz:', quiz.key);
+        const answerContent = quiz.content;
+        if (!answerContent) {
+            alert('Quiz answer data is invalid!');
+            return;
+        }
+
+        const formsId = currentTab.url.slice(startUrl.length).split("&")[0];
+        const storageId = "officeforms.answermap." + formsId;
+
+        // Step 1: Generate storage key-value pair
+        await chrome.scripting.executeScript({
+            target: { tabId: currentTab.id },
+            function: generateStorageKeyValuePair,
+            args: []
+        });
+
+        // Step 2: Replace value in storage
+        const result = await chrome.scripting.executeScript({
+            target: { tabId: currentTab.id },
+            function: replaceValueType1,
+            args: [storageId, answerContent]
+        });
+
+        const counter = result[0].result;    
+        if (counter > 0) {
+            chrome.tabs.reload(currentTab.id);
+            alert('Answer loaded successfully! The page will reload.');
+            console.log('Successfully loaded answer (type 1)');
+        } else {
+            alert('Failed to load answer. Please try again.');
+            console.log('Failed to load answer - no matching keys found');
+        }
+
+    } catch (error) {
+        console.error('Error loading quiz answer:', error);
+        alert('Error loading answer: ' + error.message);
+    }
 }
 
 // Initialize Save tab
@@ -302,8 +578,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Initialize sub-tabs for Forms
     initializeSubTabs();
     
-    // Initialize save tab on load
-    initializeSaveTab();
+    // Initialize search functionality
+    initializeSearch();
+    
+    // Initialize load tab on first load
+    initializeLoadTab();
     
     // Add event listener for extract button
     document.getElementById('extractDataButton').addEventListener('click', extractFormsData);
