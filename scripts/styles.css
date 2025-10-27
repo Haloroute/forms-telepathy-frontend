@@ -1,0 +1,234 @@
+﻿body {
+    font-family: Arial, sans-serif;
+    padding: 0;
+    margin: 0;
+    width: 350px;
+    background-color: #f9f9f9;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    background-color: #fff;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab-button {
+    flex: 1;
+    padding: 12px 8px;
+    font-size: 13px;
+    border: none;
+    background-color: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.tab-button.active {
+    color: #4CAF50;
+    border-bottom-color: #4CAF50;
+    font-weight: bold;
+}
+
+/* Sub-tab Navigation (Orange theme) */
+.subtab-navigation {
+    display: flex;
+    background-color: #fff;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 15px;
+}
+
+.subtab-button {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 12px;
+    border: none;
+    background-color: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+}
+
+.subtab-button:hover {
+    background-color: #fff5f0;
+    color: #333;
+}
+
+.subtab-button.active {
+    color: #FF8C00;
+    border-bottom-color: #FF8C00;
+    font-weight: bold;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    /* padding: 15px; */
+    animation: fadeIn 0.3s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Sub-tab Content */
+.subtab-content {
+    display: none;
+    padding: 0 15px;
+    animation: fadeIn 0.3s;
+}
+
+.subtab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Notifications List */
+#notificationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.notification-card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 75px;
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.notification-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.notification-content {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.notification-loading {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+}
+
+.notification-error {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.notification-empty {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+}
+
+/* About Tab */
+#aboutPlaceholder {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+/* Existing styles */
+.cell {    
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#checkUrlLabel {
+    margin-top: 0px;
+    font-size: 20px;
+    font-weight: bold;
+    background-color: #f9f9f9;
+    color: #666;
+    padding: 5px 10px;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.quizLabel {
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.infoLabel {    
+    margin-top: 10px;
+    font-size: 12px;
+    padding-left: 4px;
+    color: #333;
+}
+
+button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.quizButton {
+    margin: 5px 0;
+    color: #fff;
+    width: 100%;
+}
+
+#infoButton {
+    float: right;
+    margin: 5px 0 20px 0;
+}
+
+.goodEventButton {
+    background-color: #4CAF50;
+}
+
+.goodEventButton:hover {
+    background-color: #6fbf72;
+    font-weight: bold;
+}
+
+.badEventButton {
+    background-color: #FF5733;
+}
+
+.badEventButton:hover {
+    background-color: #FF8566;
+    font-weight: bold;
+}
+
+.disabledButton {
+    background-color: #AAAAAA;
+    color: #999999;
+    cursor: not-allowed;
+}
